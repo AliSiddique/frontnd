@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.0.5",
     "@headlessui/react": "^1.7.3",
     "@heroicons/react": "^2.0.12",
     "firebase": "^9.12.1",

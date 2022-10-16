@@ -42,7 +42,7 @@ export default function Index({questions}) {
     <div className="px-4 sm:px-6 lg:px-8">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-gray-900">Challenges for {framework}</h1>
+          <h1 className="text-xl font-semibold text-white">Challenges for {framework}</h1>
           <p className="mt-2 text-sm text-gray-700">
             A list of all the users in your account including their name, title, email and role.
           </p>
