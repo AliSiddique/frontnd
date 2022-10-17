@@ -1,26 +1,3 @@
-/*
-  This example requires some changes to your config:
-  
-  ```
-  // tailwind.config.js
-  const colors = require('tailwindcss/colors')
-  
-  module.exports = {
-    // ...
-    theme: {
-      extend: {
-        colors: {
-          cyan: colors.cyan,
-        },
-      },
-    },
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-    ],
-  }
-  ```
-*/
 import { Fragment, useState } from 'react'
 import { Dialog, Menu, Transition } from '@headlessui/react'
 import {
@@ -37,6 +14,10 @@ import {
   UserGroupIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+import 'react-circular-progressbar/dist/styles.css';
+
 import {
   BanknotesIcon,
   BuildingOfficeIcon,
@@ -45,6 +26,9 @@ import {
   ChevronRightIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/20/solid'
+import {auth} from '../../../firebase.config'
+import {useAuthState} from 'react-firebase-hooks/auth'
+import { CircularProgressbarWithChildren } from 'react-circular-progressbar';
 
 const navigation = [
   { name: 'Home', href: '#', icon: HomeIcon, current: true },
@@ -85,20 +69,38 @@ const statusStyles = {
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
-
+export const data = {
+  labels: ['Next.js', 'React.js', 'Vue.js', '', 'Purple', 'Orange'],
+  datasets: [
+    {
+      label: '# of Votes',
+      data: [12, 19, 3, 5, 2, 3],
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.2)',
+        'rgba(54, 162, 235, 0.2)',
+        'rgba(255, 206, 86, 0.2)',
+        'rgba(75, 192, 192, 0.2)',
+        'rgba(153, 102, 255, 0.2)',
+        'rgba(255, 159, 64, 0.2)',
+      ],
+      borderColor: [
+        'rgba(255, 99, 132, 1)',
+        'rgba(54, 162, 235, 1)',
+        'rgba(255, 206, 86, 1)',
+        'rgba(75, 192, 192, 1)',
+        'rgba(153, 102, 255, 1)',
+        'rgba(255, 159, 64, 1)',
+      ],
+      borderWidth: 1,
+    },
+  ],
+};
+ChartJS.register(ArcElement, Tooltip, Legend);
 export default function Index() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
+  const [user] = useAuthState(auth)
   return (
     <>
-      {/*
-        This example requires updating your template:
-
-        ```
-        <html class="h-full bg-gray-100">
-        <body class="h-full">
-        ```
-      */}
       <div className="min-h-full">
         <Transition.Root show={sidebarOpen} as={Fragment}>
           <Dialog as="div" className="relative z-40 lg:hidden" onClose={setSidebarOpen}>
@@ -148,7 +150,7 @@ export default function Index() {
                   <div className="flex flex-shrink-0 items-center px-4">
                     <img
                       className="h-8 w-auto"
-                      src="https://tailwindui.com/img/logos/mark.svg?color=cyan&shade=300"
+                      src={user?.photoURL}
                       alt="Easywire logo"
                     />
                   </div>
@@ -290,11 +292,11 @@ export default function Index() {
                     <Menu.Button className="flex max-w-xs items-center rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 lg:rounded-md lg:p-2 lg:hover:bg-gray-50">
                       <img
                         className="h-8 w-8 rounded-full"
-                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                        src={user?.photoURL}
                         alt=""
                       />
                       <span className="ml-3 hidden text-sm font-medium text-gray-700 lg:block">
-                        <span className="sr-only">Open user menu for </span>Emilia Birch
+                        <span className="sr-only">Open user menu for </span>{user?.email}
                       </span>
                       <ChevronDownIcon
                         className="ml-1 hidden h-5 w-5 flex-shrink-0 text-gray-400 lg:block"
@@ -358,18 +360,18 @@ export default function Index() {
                     <div className="flex items-center">
                       <img
                         className="hidden h-16 w-16 rounded-full sm:block"
-                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2.6&w=256&h=256&q=80"
+                        src={user?.photoURL}
                         alt=""
                       />
                       <div>
                         <div className="flex items-center">
                           <img
                             className="h-16 w-16 rounded-full sm:hidden"
-                            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2.6&w=256&h=256&q=80"
+                            src={user?.photoURL}
                             alt=""
                           />
                           <h1 className="ml-3 text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:leading-9">
-                            Good morning, Emilia Birch
+                            Good morning, {user?.email}
                           </h1>
                         </div>
                         <dl className="mt-6 flex flex-col sm:ml-3 sm:mt-1 sm:flex-row sm:flex-wrap">
@@ -448,7 +450,17 @@ export default function Index() {
               <h2 className="mx-auto mt-8 max-w-6xl px-4 text-lg font-medium leading-6 text-gray-900 sm:px-6 lg:px-8">
                 Recent activity
               </h2>
-
+              {/* <Doughnut style={{width:"150px"}} data={data} /> */}
+              <div className='w-30 min-w-30'>
+              <CircularProgressbarWithChildren value={36}>
+              {/* Put any JSX content in here that you'd like. It'll be vertically and horizonally centered. */}
+              <img style={{ width: 40, marginTop: -5 }} src="https://i.imgur.com/b9NyUGm.png" alt="doge" />
+              <div style={{ fontSize: 12, marginTop: -5 }}>
+                <strong>36%</strong> mate
+              </div>
+            </CircularProgressbarWithChildren>;
+              </div>
+          
               {/* Activity list (smallest breakpoint only) */}
               <div className="shadow sm:hidden">
                 <ul role="list" className="mt-2 divide-y divide-gray-200 overflow-hidden shadow sm:hidden">
