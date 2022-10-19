@@ -13,7 +13,7 @@ import {
   ShareIcon,
   StarIcon,
 } from '@heroicons/react/20/solid'
-import {auth} from '../../firebase.config'
+import {auth, db} from '../../firebase.config'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import {
   ArrowTrendingUpIcon,
@@ -24,6 +24,7 @@ import {
   UserGroupIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
+import { collection, getDocs, where,query } from 'firebase/firestore'
 
 const userNavigation = [
   { name: 'Your Profile', href: '#' },
@@ -48,7 +49,7 @@ const products = [
     category: 'UI Kit',
     href: 'next.js',
     price: '$49',
-    imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
+    imageSrc: 'https://upload.wikimedia.org/wikipedia/commons/8/8e/Nextjs-logo.svg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
   },
@@ -56,9 +57,9 @@ const products = [
     id: 1,
     name: 'React.js',
     category: 'UI Kit',
-    href: '#',
+    href: 'react.js',
     price: '$49',
-    imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
+    imageSrc: 'https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
   },
@@ -66,9 +67,9 @@ const products = [
     id: 1,
     name: 'Vue.js',
     category: 'UI Kit',
-    href: '#',
+    href: 'vue.js',
     price: '$49',
-    imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
+    imageSrc: 'https://upload.wikimedia.org/wikipedia/commons/9/95/Vue.js_Logo_2.svg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
   },
@@ -76,9 +77,9 @@ const products = [
     id: 1,
     name: 'Angular.js',
     category: 'UI Kit',
-    href: '#',
+    href: 'angular.js',
     price: '$49',
-    imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
+    imageSrc: 'https://angular.io/assets/images/logos/angular/angular.svg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
   },
@@ -86,15 +87,15 @@ const products = [
     id: 1,
     name: 'Astro.js',
     category: 'UI Kit',
-    href: '#',
+    href: '#astro.js',
     price: '$49',
-    imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
+    imageSrc: 'https://raw.githubusercontent.com/withastro/astro/main/assets/social/banner-minimal.png',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
   },
  
 ]
-export default function Index() {
+export default function Index({nextAmount}) {
   const [user] = useAuthState(auth)
   return (
     <>
@@ -285,7 +286,7 @@ export default function Index() {
     <div className="bg-white">
       <div className="mx-auto max-w-2xl py-16 px-4 sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
         <div className="flex items-center justify-between space-x-4">
-          <h2 className="text-lg font-medium text-gray-900">Customers also viewed</h2>
+          <h2 className="text-lg font-medium text-gray-900">Topics</h2>
           <a href="#" className="whitespace-nowrap text-sm font-medium text-indigo-600 hover:text-indigo-500">
             View all
             <span aria-hidden="true"> &rarr;</span>
@@ -310,7 +311,7 @@ export default function Index() {
                     {product.name}
                   </a>
                 </h3>
-                <p>{product.price}</p>
+                <p>{nextAmount} Challenges</p>
               </div>
               <p className="mt-1 text-sm text-gray-500">{product.category}</p>
             </div>
@@ -322,4 +323,15 @@ export default function Index() {
     </div>
     </>
   )
+}
+export const getStaticProps = async() => {
+  const qAmount = collection(db,'Questions')
+  const q = query(qAmount,where("Tech","==","next.js"))
+  const nextDocs = await getDocs(q)
+  const nextAmount = nextDocs.docs.length
+  return {
+    props:{
+      nextAmount
+    }
+  }
 }

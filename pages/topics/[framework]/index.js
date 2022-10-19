@@ -4,9 +4,20 @@ import {collection,getDocs,query, where} from 'firebase/firestore'
 import {db} from '../../../firebase.config'
 import Link from 'next/link'
 import { Fragment } from 'react'
-import { Disclosure, Menu, Transition } from '@headlessui/react'
+import { Disclosure,Popover, Menu, Transition } from '@headlessui/react'
 import { ChevronDownIcon, FunnelIcon } from '@heroicons/react/20/solid'
-
+import {
+  MagnifyingGlassIcon,
+} from '@heroicons/react/20/solid'
+import {
+  ArrowTrendingUpIcon,
+  Bars3Icon,
+  BellIcon,
+  FireIcon,
+  HomeIcon,
+  UserGroupIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 const people = [
   {
     name: 'Lindsay Walton',
@@ -16,6 +27,22 @@ const people = [
   },
   // More people...
 ]
+const userNavigation = [
+  { name: 'Your Profile', href: '#' },
+  { name: 'Settings', href: '#' },
+  { name: 'Sign out', href: '#' },
+]
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(' ')
+}
+const navigation = [
+  { name: 'Home', href: '#', icon: HomeIcon, current: true },
+  { name: 'Popular', href: '#', icon: FireIcon, current: false },
+  { name: 'Communities', href: '#', icon: UserGroupIcon, current: false },
+  { name: 'Trending', href: '#', icon: ArrowTrendingUpIcon, current: false },
+]
+
 const filters = {
   price: [
     { value: '0', label: '$0 - $25', checked: false },
@@ -52,339 +79,653 @@ const sortOptions = [
   { name: 'Best Rating', href: '#', current: false },
   { name: 'Newest', href: '#', current: false },
 ]
-function classNames(...classes) {
-  return classes.filter(Boolean).join(' ')
+function classNameNames(...classNamees) {
+  return classNamees.filter(Boolean).join(' ')
 }
 
 export default function Index({questions}) {
   const router = useRouter()
   const {framework} = router.query
-  const checkbox = useRef()
-  const [checked, setChecked] = useState(false)
-  const [indeterminate, setIndeterminate] = useState(false)
-  const [selectedPeople, setSelectedPeople] = useState([])
-  console.log(questions);
-  useLayoutEffect(() => {
-    const isIndeterminate = selectedPeople.length > 0 && selectedPeople.length < people.length
-    setChecked(selectedPeople.length === people.length)
-    setIndeterminate(isIndeterminate)
-    checkbox.current.indeterminate = isIndeterminate
-  }, [selectedPeople])
+  const [grid,setGrid] = useState(true)
 
-  function toggleAll() {
-    setSelectedPeople(checked || indeterminate ? [] : people)
-    setChecked(!checked && !indeterminate)
-    setIndeterminate(false)
-  }
+  console.log(questions);
+
 
   return (
     <>
-    
-    <div className="bg-white">
-      <div className="py-16 px-4 text-center sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900">Workspace</h1>
-        <p className="mx-auto mt-4 max-w-xl text-base text-gray-500">
-          The secret to a tidy desk? Don't get rid of anything, just put it in really really nice looking containers.
-        </p>
-      </div>
+  <h1 className='text-center p-14 text-4xl font-extrabold'>Questions</h1>
+    <button onClick={() => setGrid(!grid)}>Change</button>
 
-      {/* Filters */}
-      <Disclosure
-        as="section"
-        aria-labelledby="filter-heading"
-        className="grid items-center border-t border-b border-gray-200"
-      >
-        <h2 id="filter-heading" className="sr-only">
-          Filters
-        </h2>
-        <div className="relative col-start-1 row-start-1 py-4">
-          <div className="mx-auto flex max-w-7xl space-x-6 divide-x divide-gray-200 px-4 text-sm sm:px-6 lg:px-8">
-            <div>
-              <Disclosure.Button className="group flex items-center font-medium text-gray-700">
-                <FunnelIcon
-                  className="mr-2 h-5 w-5 flex-none text-gray-400 group-hover:text-gray-500"
-                  aria-hidden="true"
-                />
-                Easy
-              </Disclosure.Button>
-            </div>
-            <div>
-              <Disclosure.Button className="group flex items-center font-medium text-gray-700">
-                <FunnelIcon
-                  className="mr-2 h-5 w-5 flex-none text-gray-400 group-hover:text-gray-500"
-                  aria-hidden="true"
-                />
-                Medium
-              </Disclosure.Button>
-            </div>
-            <div>
-              <Disclosure.Button className="group flex items-center font-medium text-gray-700">
-                <FunnelIcon
-                  className="mr-2 h-5 w-5 flex-none text-gray-400 group-hover:text-gray-500"
-                  aria-hidden="true"
-                />
-                Hard
-              </Disclosure.Button>
-            </div>
-          </div>
-        </div>
-        <Disclosure.Panel className="border-t border-gray-200 py-10">
-          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-4 px-4 text-sm sm:px-6 md:gap-x-6 lg:px-8">
-            <div className="grid auto-rows-min grid-cols-1 gap-y-10 md:grid-cols-2 md:gap-x-6">
-              <fieldset>
-                <legend className="block font-medium">Price</legend>
-                <div className="space-y-6 pt-6 sm:space-y-4 sm:pt-4">
-                  {filters.price.map((option, optionIdx) => (
-                    <div key={option.value} className="flex items-center text-base sm:text-sm">
-                      <input
-                        id={`price-${optionIdx}`}
-                        name="price[]"
-                        defaultValue={option.value}
-                        type="checkbox"
-                        className="h-4 w-4 flex-shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        defaultChecked={option.checked}
-                      />
-                      <label htmlFor={`price-${optionIdx}`} className="ml-3 min-w-0 flex-1 text-gray-600">
-                        {option.label}
-                      </label>
+    <div className="min-h-full">
+        {/* When the mobile menu is open, add `overflow-hidden` to the `body` element to prevent double scrollbars */}
+        <Popover
+          as="header"
+          className={({ open }) =>
+            classNames(
+              open ? 'fixed inset-0 z-40 overflow-y-auto' : '',
+              'bg-white shadow-sm lg:static lg:overflow-y-visible'
+            )
+          }
+        >
+          {({ open }) => (
+            <>
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 bg-black">
+                <div className="relative flex justify-between lg:gap-8 xl:grid xl:grid-cols-12">
+                  <div className="flex md:absolute md:inset-y-0 md:left-0 lg:static xl:col-span-2">
+                    <div className="flex flex-shrink-0 items-center">
+                      <a href="#">
+                        {/* <img
+                          className="block h-8 w-auto"
+                          src="https://tailwindui.com/img/logos/mark.svg?color=rose&shade=500"
+                          alt="Your Company"
+                        /> */}
+                        <div className='flex justify-center gap-3 border-2'>
+                          <div className='border-1'>
+                        <h1>Easy</h1>
+                          </div>
+                          <div>
+                          <h1>Medium</h1>
+
+                          </div>
+                          <div>
+                          <h1>Hard</h1>
+
+                          </div>
+                        </div>
+                      </a>
                     </div>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend className="block font-medium">Color</legend>
-                <div className="space-y-6 pt-6 sm:space-y-4 sm:pt-4">
-                  {filters.color.map((option, optionIdx) => (
-                    <div key={option.value} className="flex items-center text-base sm:text-sm">
-                      <input
-                        id={`color-${optionIdx}`}
-                        name="color[]"
-                        defaultValue={option.value}
-                        type="checkbox"
-                        className="h-4 w-4 flex-shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        defaultChecked={option.checked}
-                      />
-                      <label htmlFor={`color-${optionIdx}`} className="ml-3 min-w-0 flex-1 text-gray-600">
-                        {option.label}
-                      </label>
+                  </div>
+                  <div className="min-w-0 flex-1 md:px-8 lg:px-0 xl:col-span-6">
+                    <div className="flex items-center px-6 py-4 md:mx-auto md:max-w-3xl lg:mx-0 lg:max-w-none xl:px-0">
+                      <div className="w-full">
+                        <label htmlFor="search" className="sr-only">
+                          Search
+                        </label>
+                        <div className="relative">
+                          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                          </div>
+                          <input
+                            id="search"
+                            name="search"
+                            className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm placeholder-gray-500 focus:border-rose-500 focus:text-gray-900 focus:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-rose-500 sm:text-sm"
+                            placeholder="Search"
+                            type="search"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="flex items-center md:absolute md:inset-y-0 md:right-0 lg:hidden">
+                    {/* Mobile menu button */}
+                    <Popover.Button className="-mx-2 inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-rose-500">
+                      <span className="sr-only">Open menu</span>
+                      {open ? (
+                        <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
+                      ) : (
+                        <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
+                      )}
+                    </Popover.Button>
+                  </div>
+                  <div className="hidden lg:flex lg:items-center lg:justify-end xl:col-span-4">
+                    <a href="#" className="text-sm font-medium text-gray-900 hover:underline">
+                      Go Premium
+                    </a>
+                    <a
+                      href="#"
+                      className="ml-5 flex-shrink-0 rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                    >
+                      <span className="sr-only">View notifications</span>
+                      <BellIcon className="h-6 w-6" aria-hidden="true" />
+                    </a>
+
+                    {/* Profile dropdown */}
+                    <Menu as="div" className="relative ml-5 flex-shrink-0">
+                      <div>
+                        <Menu.Button className="flex rounded-full bg-white focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2">
+                          <span className="sr-only">Open user menu</span>
+                          <img className="h-8 w-8 rounded-full"  alt="" />
+                        </Menu.Button>
+                      </div>
+                      <Transition
+                        as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
+                        <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                          {userNavigation.map((item) => (
+                            <Menu.Item key={item.name}>
+                              {({ active }) => (
+                                <a
+                                  href={item.href}
+                                  className={classNames(
+                                    active ? 'bg-gray-100' : '',
+                                    'block py-2 px-4 text-sm text-gray-700'
+                                  )}
+                                >
+                                  {item.name}
+                                </a>
+                              )}
+                            </Menu.Item>
+                          ))}
+                        </Menu.Items>
+                      </Transition>
+                    </Menu>
+
+                    <a
+                      href="#"
+                      className="ml-6 inline-flex items-center rounded-md border border-transparent bg-rose-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                    >
+                     <div className='flex justify-evenly'>
+                      <div>
+                          <h1>hello </h1>
+                      </div>
+                      <div>
+                       <h1>bye</h1>
+                      </div>
+                     </div>
+                    </a>
+                  </div>
                 </div>
-              </fieldset>
-            </div>
-            <div className="grid auto-rows-min grid-cols-1 gap-y-10 md:grid-cols-2 md:gap-x-6">
-              <fieldset>
-                <legend className="block font-medium">Size</legend>
-                <div className="space-y-6 pt-6 sm:space-y-4 sm:pt-4">
-                  {filters.size.map((option, optionIdx) => (
-                    <div key={option.value} className="flex items-center text-base sm:text-sm">
-                      <input
-                        id={`size-${optionIdx}`}
-                        name="size[]"
-                        defaultValue={option.value}
-                        type="checkbox"
-                        className="h-4 w-4 flex-shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        defaultChecked={option.checked}
-                      />
-                      <label htmlFor={`size-${optionIdx}`} className="ml-3 min-w-0 flex-1 text-gray-600">
-                        {option.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend className="block font-medium">Category</legend>
-                <div className="space-y-6 pt-6 sm:space-y-4 sm:pt-4">
-                  {filters.category?.map((option, optionIdx) => (
-                    <div key={option.value} className="flex items-center text-base sm:text-sm">
-                      <input
-                        id={`category-${optionIdx}`}
-                        name="category[]"
-                        defaultValue={option.value}
-                        type="checkbox"
-                        className="h-4 w-4 flex-shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        defaultChecked={option.checked}
-                      />
-                      <label htmlFor={`category-${optionIdx}`} className="ml-3 min-w-0 flex-1 text-gray-600">
-                        {option.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </fieldset>
-            </div>
-          </div>
-        </Disclosure.Panel>
-        <div className="col-start-1 row-start-1 py-4">
-          <div className="mx-auto flex max-w-7xl justify-end px-4 sm:px-6 lg:px-8">
-            <Menu as="div" className="relative inline-block">
-              <div className="flex">
-                <Menu.Button className="group inline-flex justify-center text-sm font-medium text-gray-700 hover:text-gray-900">
-                  Sort
-                  <ChevronDownIcon
-                    className="-mr-1 ml-1 h-5 w-5 flex-shrink-0 text-gray-400 group-hover:text-gray-500"
-                    aria-hidden="true"
-                  />
-                </Menu.Button>
               </div>
 
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <Menu.Items className="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    {sortOptions.map((option) => (
-                      <Menu.Item key={option.name}>
-                        {({ active }) => (
-                          <a
-                            href={option.href}
-                            className={classNames(
-                              option.current ? 'font-medium text-gray-900' : 'text-gray-500',
-                              active ? 'bg-gray-100' : '',
-                              'block px-4 py-2 text-sm'
-                            )}
-                          >
-                            {option.name}
-                          </a>
-                        )}
-                      </Menu.Item>
+              <Popover.Panel as="nav" className="lg:hidden" aria-label="Global">
+                <div className="mx-auto max-w-3xl space-y-1 px-2 pt-2 pb-3 sm:px-4">
+                  {navigation.map((item) => (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      aria-current={item.current ? 'page' : undefined}
+                      className={classNames(
+                        item.current ? 'bg-gray-100 text-gray-900' : 'hover:bg-gray-50',
+                        'block rounded-md py-2 px-3 text-base font-medium'
+                      )}
+                    >
+                      {item.name}
+                    </a>
+                  ))}
+                </div>
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="mx-auto flex max-w-3xl items-center px-4 sm:px-6">
+                    <div className="flex-shrink-0">
+                      <img className="h-10 w-10 rounded-full"  alt="" />
+                    </div>
+                    <div className="ml-3">
+                      <div className="text-base font-medium text-gray-800"></div>
+                      <div className="text-sm font-medium text-gray-500"></div>
+                    </div>
+                    <button
+                      type="button"
+                      className="ml-auto flex-shrink-0 rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+                    >
+                      <span className="sr-only">View notifications</span>
+                      <BellIcon className="h-6 w-6" aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="mx-auto mt-3 max-w-3xl space-y-1 px-2 sm:px-4">
+                    {userNavigation.map((item) => (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        className="block rounded-md py-2 px-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        {item.name}
+                      </a>
                     ))}
                   </div>
-                </Menu.Items>
-              </Transition>
-            </Menu>
-          </div>
-        </div>
-      </Disclosure>
-    </div>
-
-    <div className="px-4 sm:px-6 lg:px-8">
-      <div className="sm:flex sm:items-center">
-        <div className="sm:flex-auto">
-          <h1 className="text-xl font-semibold text-white">Challenges for {framework}</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            A list of all the users in your account including their name, title, email and role.
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto"
-          >
-            Add user
-          </button>
-        </div>
-      </div>
-      <div className="mt-8 flex flex-col">
-        <div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-            <div className="relative overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-              {selectedPeople.length > 0 && (
-                <div className="absolute top-0 left-12 flex h-12 items-center space-x-3 bg-gray-50 sm:left-16">
-                  <button
-                    type="button"
-                    className="inline-flex items-center rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    Bulk edit
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-30"
-                  >
-                    Delete all
-                  </button>
                 </div>
-              )}
-              <table className="min-w-full table-fixed divide-y divide-gray-300">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="relative w-12 px-6 sm:w-16 sm:px-8">
-                      <input
-                        type="checkbox"
-                        className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 sm:left-6"
-                        ref={checkbox}
-                        checked={checked}
-                        onChange={toggleAll}
-                      />
-                    </th>
-                    <th scope="col" className="min-w-[12rem] py-3.5 pr-3 text-left text-sm font-semibold text-gray-900 px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      <a href="#" className="group inline-flex">
-                        Questions
-                        <span className="ml-2 flex-none rounded bg-gray-200 text-gray-900 group-hover:bg-gray-300">
-                          <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-                        </span>
-                      </a>
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Difficulty
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Tech
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Time
-                    </th>
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                      <span className="sr-only">Edit</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+
+                <div className="mx-auto mt-6 max-w-3xl px-4 sm:px-6">
+                  <a
+                    href="#"
+                    className="flex w-full items-center justify-center rounded-md border border-transparent bg-rose-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-rose-700"
+                  >
+                    New Post
+                  </a>
+
+                  <div className="mt-6 flex justify-center">
+                    <a href="#" className="text-base font-medium text-gray-900 hover:underline">
+                      Go Premium
+                    </a>
+                  </div>
+                </div>
+              </Popover.Panel>
+            </>
+          )}
+        </Popover>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    {grid ? (
+                <>
+                <div className='flex gap-5 mt-5 justify-evenly'>
+               {questions.map(person => (
+
+              
+                <div className="p-6 max-w-sm bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
+                    <a href="#">
+                        <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{person.data.Prompt}</h5>
+                    </a>
+                    <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">Here are the biggest enterprise technology acquisitions of 2021 so far, in reverse chronological order.</p>
+                    <a href="#" className="inline-flex items-center py-2 px-3 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                        Read more
+                        <svg aria-hidden="true" className="ml-2 -mr-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                    </a>
+                </div>
+                ))}
+                
+                </div>
+                </>
+              ) : ( 
+                    <>
                   {questions.map((person) => (
                     <Link href={`/topics/${framework}/${person.data.Prompt}/`}>
-                    <tr key={person.data.id} className={selectedPeople.includes(person) ? 'bg-gray-50' : undefined}>
-                      <td className="relative w-12 px-6 sm:w-16 sm:px-8">
-                        {selectedPeople.includes(person) && (
-                          <div className="absolute inset-y-0 left-0 w-0.5 bg-indigo-600" />
-                        )}
-                        <input
-                          type="checkbox"
-                          className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 sm:left-6"
-                          value={person.email}
-                          checked={person.data.Complete}
-                          onChange={(e) =>
-                            setSelectedPeople(
-                              e.target.checked
-                                ? [...selectedPeople, person]
-                                : selectedPeople.filter((p) => p !== person)
-                            )
-                          }
-                        />
-                      </td>
-                      <td
-                        className={classNames(
-                          'whitespace-nowrap py-4 pr-3 text-sm font-medium',
-                          selectedPeople.includes(person) ? 'text-indigo-600' : 'text-gray-900'
-                        )}
-                      >
-                        {person.data.Prompt}
-                        {console.log("this is for thr person " + person.data.Prompt)}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.data.Difficulty}</td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.data.Tech}</td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{person.data.Time}</td>
-                      <td className="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a href="#" className="text-indigo-600 hover:text-indigo-900">
-                          Edit<span className="sr-only">, {person.name}</span>
-                        </a>
-                      </td>
-                    </tr>
+                      
+          <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
+              <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                  <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                      <tr>
+                      <th scope="col" class="p-4">
+                          <div class="flex items-center">
+                              <input id="checkbox-all-search" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                              <label for="checkbox-all-search" class="sr-only">checkbox</label>
+                          </div>
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Product name
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Color
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Category
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Accesories
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Available
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Price
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Weight
+                </th>
+                <th scope="col" class="py-3 px-6">
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-1" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-1" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Apple MacBook Pro 17"
+                </th>
+                <td class="py-4 px-6">
+                    Sliver
+                </td>
+                <td class="py-4 px-6">
+                    Laptop
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    $2999
+                </td>
+                <td class="py-4 px-6">
+                    3.0 lb.
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-2" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-2" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Microsoft Surface Pro
+                </th>
+                <td class="py-4 px-6">
+                    White
+                </td>
+                <td class="py-4 px-6">
+                    Laptop PC
+                </td>
+                <td class="py-4 px-6">
+                    No
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    $1999
+                </td>
+                <td class="py-4 px-6">
+                    1.0 lb.
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Magic Mouse 2
+                </th>
+                <td class="py-4 px-6">
+                    Black
+                </td>
+                <td class="py-4 px-6">
+                    Accessories
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    No
+                </td>
+                <td class="py-4 px-6">
+                    $99
+                </td>
+                <td class="py-4 px-6">
+                    0.2 lb.
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Apple Watch
+                </th>
+                <td class="py-4 px-6">
+                    Black
+                </td>
+                <td class="py-4 px-6">
+                    Watches
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    No
+                </td>
+                <td class="py-4 px-6">
+                    $199
+                </td>
+                <td class="py-4 px-6">
+                    0.12 lb.
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Apple iMac
+                </th>
+                <td class="py-4 px-6">
+                    Silver
+                </td>
+                <td class="py-4 px-6">
+                    PC
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    $2999
+                </td>
+                <td class="py-4 px-6">
+                    7.0 lb.
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Apple AirPods
+                </th>
+                <td class="py-4 px-6">
+                    White
+                </td>
+                <td class="py-4 px-6">
+                    Accessories
+                </td>
+                <td class="py-4 px-6">
+                    No
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    $399
+                </td>
+                <td class="py-4 px-6">
+                    38 g
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    iPad Pro
+                </th>
+                <td class="py-4 px-6">
+                    Gold
+                </td>
+                <td class="py-4 px-6">
+                    Tablet
+                </td>
+                <td class="py-4 px-6">
+                    No
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    $699
+                </td>
+                <td class="py-4 px-6">
+                    1.3 lb.
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Magic Keyboard
+                </th>
+                <td class="py-4 px-6">
+                    Black
+                </td>
+                <td class="py-4 px-6">
+                    Accessories
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    $99
+                </td>
+                <td class="py-4 px-6">
+                    453 g
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    Apple TV 4K
+                </th>
+                <td class="py-4 px-6">
+                    Black
+                </td>
+                <td class="py-4 px-6">
+                    TV
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    No
+                </td>
+                <td class="py-4 px-6">
+                    $179
+                </td>
+                <td class="py-4 px-6">
+                    1.78 lb.
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                </td>
+            </tr>
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td class="p-4 w-4">
+                    <div class="flex items-center">
+                        <input id="checkbox-table-search-3" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
+                        <label for="checkbox-table-search-3" class="sr-only">checkbox</label>
+                    </div>
+                </td>
+                <th scope="row" class="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    AirTag
+                </th>
+                <td class="py-4 px-6">
+                    Silver
+                </td>
+                <td class="py-4 px-6">
+                    Accessories
+                </td>
+                <td class="py-4 px-6">
+                    Yes
+                </td>
+                <td class="py-4 px-6">
+                    No
+                </td>
+                <td class="py-4 px-6">
+                    $29
+                </td>
+                <td class="py-4 px-6">
+                    53 g
+                </td>
+                <td class="flex items-center py-4 px-6 space-x-3">
+                    <a href="#" class="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
+                    <a href="#" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+                    
                     </Link>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+           </>
+    )}
     </>
   )
 }
